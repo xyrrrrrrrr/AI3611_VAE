@@ -44,7 +44,7 @@ class Encoder(nn.Module):
         self.Downsample2 = Downsample(self.output_size, self.output_size)
         self.Downsample3 = Downsample(self.output_size, self.output_size)
         self.mean = nn.Linear(28*28, self.hidden_size)
-        self.variance = nn.Linear(28*28, self.hidden_size)
+        self.logvar = nn.Linear(28*28, self.hidden_size)
 
     def forward(self, input):
         output = self.Downsample1(input)
@@ -54,12 +54,12 @@ class Encoder(nn.Module):
         output = self.Downsample3(output)
         output = nn.Flatten()(output)
         mean = self.mean(output)
-        variance = self.variance(output)
-        return mean, variance
+        logvar = self.logvar(output)
+        return mean, logvar
     
-    def reparameterize(self, mean, std):
-        eps = torch.randn_like(std)
-        return mean + eps * std
+    def reparameterize(self, mean, logvar):
+        eps = torch.randn_like(logvar)
+        return mean + eps * logvar
 
 
 class Decoder(nn.Module):
@@ -95,10 +95,10 @@ class VAE(nn.Module):
         self.decoder = Decoder(self.hidden_size, self.input_size)
 
     def forward(self, input):
-        mean, var = self.encoder(input)
+        mean, logvar = self.encoder(input)
         self.mean = mean
-        self.variance = var
-        z = self.encoder.reparameterize(mean, var)
+        self.logvar = logvar
+        z = self.encoder.reparameterize(mean, logvar)
         output = self.decoder(z)
         return output
     
@@ -106,4 +106,4 @@ class VAE(nn.Module):
         return self.mean
 
     def _get_var(self):
-        return self.variance
+        return self.logvar

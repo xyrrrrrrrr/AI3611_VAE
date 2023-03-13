@@ -8,6 +8,7 @@ import os
 import cv2
 import time
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -78,16 +79,26 @@ else:
     VAE_model.load_state_dict(torch.load(args.model))
 
     # test model and save results
+    counter = 0
     for batch_idx, (data, _) in enumerate(test_loader):
         data = data.to(device)
         # generate results
         recon_x = VAE_model(data)
-        # save results
-        # merge two images
-        img = torch.cat((data, recon_x), dim=0)
+        # change to 0 or 255
+        img = torch.where(recon_x > 0.5, torch.ones_like(recon_x), torch.zeros_like(recon_x))
         # save image
-        cur = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
-        cv2.imwrite(os.path.join(results_dir, 'results_' + cur + '.jpg'), img)
+        img = img.cpu().detach().numpy()
+        data = data.cpu().detach().numpy()
+        for i in range(len(img)):
+            # cut dimension
+            # img[i] = img[i].transpose(0,2,1)
+            img_i = img[i][0, :, :] * 255
+            data_i = data[i][0, :, :] * 255
+            # data_i = data[i].transpose(0,2,1)
+            # concat image
+            img_i = np.concatenate([img_i, data_i], axis=1)
+            cv2.imwrite(os.path.join(results_dir, 'results_' + str(counter) + '.jpg'), img_i)
+            counter += 1
 
 
     
