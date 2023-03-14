@@ -50,6 +50,11 @@ if not testing:
         os.mkdir(save_dir)
     losses = []
     for epoch in range(1, epochs + 1):
+        if args.lr_scheduled:
+            if epoch % 10 == 0:
+                lr = lr * 0.1
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = lr
         for batch_idx, (data, _) in enumerate(train_loader):
             data = data.to(device)
             # forward
@@ -69,6 +74,7 @@ if not testing:
     # plot loss
     label = 'optimizer: {}, lr: {}, batch_size: {}, epochs: {}'.format(args.optimizer, lr, batch_size, epochs)
     plt.plot(losses, label=label)
+    plt.savefig(os.path.join(save_dir, 'loss.png'))
     # save model
     cur = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
     torch.save(VAE_model.state_dict(), os.path.join(save_dir, 'VAE_model_' + cur + '.pth'))

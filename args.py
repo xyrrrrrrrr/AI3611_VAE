@@ -15,6 +15,7 @@ def get_args():
     parser.add_argument('--epochs', type=int, default=5, metavar='N',
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR', help='learning rate (default: 1e-3)')
+    parser.add_argument('--lr-scheduled', type=bool, default=False, help='whether to use lr scheduler')
     parser.add_argument('--device', type=str, default= '-1', help='device to use for training / testing')
     parser.add_argument('--save-dir', type=str, default='./model', help='directory to save model to')
     parser.add_argument('--testing', type=bool, default=False, help='whether to test the model')

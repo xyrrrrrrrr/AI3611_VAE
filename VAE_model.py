@@ -7,7 +7,7 @@ This file contains my implementation of VAE model.
 import torch
 import torch.nn as nn
 
-z_dim = 1 # That is the dimension of the latent space
+z_dim = 2 # That is the dimension of the latent space
 
 class Downsample(nn.Module):
     def __init__(self, input_size, output_size):
@@ -40,26 +40,24 @@ class Encoder(nn.Module):
         self.output_size = output_size
         self.hidden_size = hidden_size
         self.dropout = nn.Dropout(dropout)
-        self.Downsample1 = Downsample(self.input_size, self.output_size)
-        self.Downsample2 = Downsample(self.output_size, self.output_size)
-        self.Downsample3 = Downsample(self.output_size, self.output_size)
-        self.mean = nn.Linear(28*28, self.hidden_size)
-        self.logvar = nn.Linear(28*28, self.hidden_size)
+        self.fc = nn.Linear(28*28, 256)
+        self.fc2 = nn.Linear(256, 1024)
+        self.mean = nn.Linear(1024, self.hidden_size)
+        self.logvar = nn.Linear(1024, self.hidden_size)
 
     def forward(self, input):
-        output = self.Downsample1(input)
-        output = self.dropout(output)
-        output = self.Downsample2(output)
-        output = self.dropout(output)
-        output = self.Downsample3(output)
-        output = nn.Flatten()(output)
+        output = nn.Flatten()(input)
+        output = self.fc(output)
+        output = torch.relu(output) 
+        output = self.fc2(output)
+        output = torch.relu(output) 
         mean = self.mean(output)
         logvar = self.logvar(output)
         return mean, logvar
     
     def reparameterize(self, mean, logvar):
         eps = torch.randn_like(logvar)
-        return mean + eps * logvar
+        return mean + eps * torch.exp(logvar)
 
 
 class Decoder(nn.Module):
@@ -68,25 +66,20 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
-        self.fc = nn.Linear(self.input_size, 28*28)
-        self.Upsample1 = Upsample(self.input_size, self.output_size)
-        self.Upsample2 = Upsample(self.output_size, self.output_size)
-        self.Upsample3 = Upsample(self.output_size, self.output_size)
-
+        self.fc1 = nn.Linear(self.input_size, 28*28)
+        self.fc2 = nn.Linear(28*28, 28*28)
 
     def forward(self, input):
-        output = self.fc(input)
+        output = self.fc1(input)
+        output = torch.relu(output) 
+        output = self.fc2(output)
         output = output.view(-1, 1, 28, 28)
-        output = self.Upsample1(output)
-        output = self.Upsample2(output)
-        output = self.Upsample3(output)
-        # change to 0 or 1
         output = torch.sigmoid(output)
         return output
 
         
 class VAE(nn.Module):
-    def __init__(self, input_size=1, output_size=1, hidden_size=z_dim, dropout=0.1):
+    def __init__(self, input_size=1, output_size=1, hidden_size=z_dim, dropout=0):
         super(VAE, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
