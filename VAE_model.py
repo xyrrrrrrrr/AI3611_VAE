@@ -7,7 +7,7 @@ This file contains my implementation of VAE model.
 import torch
 import torch.nn as nn
 
-z_dim = 2 # That is the dimension of the latent space
+z_dim = 1 # That is the dimension of the latent space
 
 class Downsample(nn.Module):
     def __init__(self, input_size, output_size):
@@ -92,6 +92,7 @@ class VAE(nn.Module):
         self.mean = mean
         self.logvar = logvar
         z = self.encoder.reparameterize(mean, logvar)
+        self.z = z
         output = self.decoder(z)
         return output
     
@@ -100,3 +101,6 @@ class VAE(nn.Module):
 
     def _get_var(self):
         return self.logvar
+    
+    def _get_z(self):
+        return self.z
